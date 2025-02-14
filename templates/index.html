@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps Alerts</title>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Maps Vaddia & Carrubinieri Jaci Alerts</h1>
+    <div id="map"></div>
+    <script>
+        let map;
+        let googleApiKey;
+
+        async function fetchGoogleApiKey() {
+            const response = await fetch("http://localhost:5000/google-api-key");
+            const data = await response.json();
+            googleApiKey = data.google_api_key;
+            loadGoogleMapsScript();
+        }
+
+        function loadGoogleMapsScript() {
+            const script = document.createElement("script");
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&callback=initMap`;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 40.7128, lng: -74.0060 },
+                zoom: 10,
+            });
+
+            fetchAlerts();
+
+            map.addListener("click", (event) => {
+                const lat = event.latLng.lat();
+                const lng = event.latLng.lng();
+                const message = prompt("Enter alert message:");
+                if (message) {
+                    addAlert(lat, lng, message);
+                }
+            });
+        }
+
+        async function fetchAlerts() {
+            const response = await fetch("http://localhost:5000/alerts");
+            const alerts = await response.json();
+            alerts.forEach(alert => {
+                new google.maps.Marker({
+                    position: { lat: alert.lat, lng: alert.lng },
+                    map,
+                    title: alert.message
+                });
+            });
+        }
+
+        async function addAlert(lat, lng, message) {
+            const response = await fetch("http://localhost:5000/alerts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lat, lng, message })
+            });
+            if (response.ok) {
+                new google.maps.Marker({
+                    position: { lat, lng },
+                    map,
+                    title: message
+                });
+            }
+        }
+
+        fetchGoogleApiKey();
+    </script>
+</body>
+</html>
