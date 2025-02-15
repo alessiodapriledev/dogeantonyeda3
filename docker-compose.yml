@@ -1,18 +1,45 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - internal_network  
 
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "5000:5000"
+    depends_on:
+      - postgres
     environment:
-      - NODE_ENV=production
+      - DATABASE_URL=postgres://user:password@postgres:5432/dbname
+    networks:
+      - internal_network
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dbname
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

@@ -1,19 +1,22 @@
-# Usa un'immagine di Node.js come base
-FROM node:18
+FROM golang:latest
 
-# Imposta la directory di lavoro
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
+
 WORKDIR /app
 
-# Copia package.json e installa le dipendenze
-COPY package.json package-lock.json ./
-RUN npm install
+COPY go.mod .
 
-# Copia tutto il codice dell'app
+COPY go.sum .
+
+RUN go mod download
+
 COPY . .
 
-# Esponi la porta 3000 per le API
-EXPOSE 3000
+RUN go build -o main ./cmd/main.go
 
-# Avvia l'applicazione
-CMD ["node", "server.js"]
+EXPOSE 5000
 
+CMD ["./main"]
